@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import monitoringRoutes from './routes/monitoringRoutes.js';
+import { monitoringService } from './services/monitoringService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,7 +46,26 @@ const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolv
 if (isMain) {
   server = app.listen(PORT, () => {
     console.log(`Endpoint Health Monitor Demo running at http://localhost:${PORT}`);
+    // Start background monitoring with an immediate initial check
+    monitoringService.start(true);
   });
+
+  // Graceful shutdown handling
+  const shutdown = () => {
+    console.log('\nShutting down Endpoint Health Monitor gracefully...');
+    monitoringService.stop();
+    if (server) {
+      server.close(() => {
+        console.log('Server closed successfully.');
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
 export { app, server };

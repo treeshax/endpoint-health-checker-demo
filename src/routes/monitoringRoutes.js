@@ -227,4 +227,44 @@ router.delete('/endpoints/:id', (req, res) => {
   }
 });
 
+/**
+ * POST /api/monitoring/start
+ * Starts periodic background monitoring timers.
+ */
+router.post('/monitoring/start', (req, res) => {
+  try {
+    monitoringService.start(false);
+    res.status(200).json({
+      success: true,
+      message: 'Background monitoring started',
+      isMonitoringActive: monitoringService.isRunning()
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: `Failed to start monitoring: ${err.message}`
+    });
+  }
+});
+
+/**
+ * POST /api/monitoring/stop
+ * Stops periodic background monitoring timers.
+ */
+router.post('/monitoring/stop', (req, res) => {
+  try {
+    monitoringService.stop();
+    res.status(200).json({
+      success: true,
+      message: 'Background monitoring paused',
+      isMonitoringActive: monitoringService.isRunning()
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: `Failed to stop monitoring: ${err.message}`
+    });
+  }
+});
+
 export default router;
