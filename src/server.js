@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import monitoringRoutes from './routes/monitoringRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +26,9 @@ app.get('/health', (req, res) => {
     uptime: Math.floor(process.uptime())
   });
 });
+
+// Mount monitoring API routes
+app.use('/api', monitoringRoutes);
 
 // Centralized error handler
 app.use((err, req, res, next) => {
