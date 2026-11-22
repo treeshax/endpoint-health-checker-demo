@@ -1,3 +1,4 @@
+
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,9 +44,11 @@ app.use((err, req, res, next) => {
 // Start listening only when executed directly
 let server;
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
 if (isMain) {
-  server = app.listen(PORT, () => {
+  server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Endpoint Health Monitor Demo running at http://localhost:${PORT}`);
+
     // Start background monitoring with an immediate initial check
     monitoringService.start(true);
   });
@@ -54,6 +57,7 @@ if (isMain) {
   const shutdown = () => {
     console.log('\nShutting down Endpoint Health Monitor gracefully...');
     monitoringService.stop();
+
     if (server) {
       server.close(() => {
         console.log('Server closed successfully.');
