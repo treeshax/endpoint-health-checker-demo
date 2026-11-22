@@ -1,0 +1,25 @@
+{
+  "name": "endpoint-health-checker-demo",
+  "version": "1.0.0",
+  "description": "A web-based dashboard demo using the published endpoint-health-checker npm package to monitor multiple HTTP/HTTPS endpoints.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "keywords": [
+    "endpoint-health-checker",
+    "health-check",
+    "uptime",
+    "latency",
+    "api-monitor",
+    "dashboard",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "endpoint-health-checker": "^0.1.0",
+    "express": "^4.21.2"
+  }
+}
