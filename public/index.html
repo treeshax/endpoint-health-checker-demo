@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endpoint Health Monitor</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%22><text y=%2222%22 font-size=%2222%22>🩺</text></svg>">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="brand-icon">🩺</div>
+        <div>
+          <h1 class="brand-title">Endpoint Health Monitor</h1>
+          <p class="brand-subtitle">Real-time HTTP/HTTPS API status, latency tracking, and failure alerting</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="powered-by">Powered by <a href="https://www.npmjs.com/package/endpoint-health-checker" target="_blank" rel="noopener">endpoint-health-checker</a></span>
+        <div class="live-indicator" id="monitoringIndicator" title="Periodic monitoring status">
+          <span class="pulse-dot"></span>
+          <span id="monitoringIndicatorText">Monitoring Active</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- Summary Metrics Cards -->
+    <section class="summary-section">
+      <div class="stat-card" id="card-total">
+        <div class="stat-header">
+          <span class="stat-label">Total Endpoints</span>
+          <span class="stat-icon">🌐</span>
+        </div>
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-subtext">Configured targets</div>
+      </div>
+
+      <div class="stat-card stat-card-up" id="card-up">
+        <div class="stat-header">
+          <span class="stat-label">Healthy</span>
+          <span class="stat-icon">🟢</span>
+        </div>
+        <div class="stat-value" id="stat-up">0</div>
+        <div class="stat-subtext">Status UP</div>
+      </div>
+
+      <div class="stat-card stat-card-degraded" id="card-degraded">
+        <div class="stat-header">
+          <span class="stat-label">Degraded</span>
+          <span class="stat-icon">🟠</span>
+        </div>
+        <div class="stat-value" id="stat-degraded">0</div>
+        <div class="stat-subtext">High latency ceiling</div>
+      </div>
+
+      <div class="stat-card stat-card-down" id="card-down">
+        <div class="stat-header">
+          <span class="stat-label">Down</span>
+          <span class="stat-icon">🔴</span>
+        </div>
+        <div class="stat-value" id="stat-down">0</div>
+        <div class="stat-subtext">HTTP error / unreachable</div>
+      </div>
+
+      <div class="stat-card stat-card-timeout" id="card-timeout">
+        <div class="stat-header">
+          <span class="stat-label">Timeout</span>
+          <span class="stat-icon">🟡</span>
+        </div>
+        <div class="stat-value" id="stat-timeout">0</div>
+        <div class="stat-subtext">Deadline exceeded</div>
+      </div>
+    </section>
+
+    <!-- Controls & Action Toolbar -->
+    <section class="toolbar-section">
+      <div class="toolbar-left">
+        <h2 class="section-heading">Monitored Endpoints</h2>
+        <span class="last-updated" id="lastUpdated">Last updated: Waiting for probe...</span>
+      </div>
+      <div class="toolbar-actions">
+        <button type="button" class="btn btn-secondary" id="btnToggleMonitoring">
+          <span class="btn-icon" id="toggleMonitoringIcon">⏸</span>
+          <span id="toggleMonitoringText">Pause Polling</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="btnRefresh" title="Refresh dashboard data">
+          <span class="btn-icon">🔄</span>
+          <span>Refresh</span>
+        </button>
+        <button type="button" class="btn btn-primary" id="btnCheckAll">
+          <span class="btn-icon">⚡</span>
+          <span>Check All Now</span>
+        </button>
+        <button type="button" class="btn btn-accent" id="btnOpenAddModal">
+          <span class="btn-icon">+</span>
+          <span>Add Endpoint</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Endpoints Grid View -->
+    <section class="endpoints-section">
+      <div class="endpoints-grid" id="endpointsGrid">
+        <!-- Dynamic Cards Injected by script.js -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">📭</div>
+        <h3>No Monitored Endpoints</h3>
+        <p>No endpoints are currently registered. Click "Add Endpoint" to get started.</p>
+        <button type="button" class="btn btn-primary" id="btnEmptyAdd">Add First Endpoint</button>
+      </div>
+
+      <!-- Loading State Overlay -->
+      <div class="loading-state hidden" id="loadingState">
+        <div class="spinner"></div>
+        <p id="loadingMessage">Probing endpoints...</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add Endpoint Modal -->
+  <div class="modal-backdrop hidden" id="addEndpointModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Monitored Endpoint</h3>
+        <button type="button" class="modal-close-btn" id="btnCloseModal">&times;</button>
+      </div>
+      <form id="addEndpointForm" class="modal-form">
+        <div class="form-group">
+          <label for="inputUrl">Endpoint URL <span class="required">*</span></label>
+          <input type="url" id="inputUrl" name="url" required placeholder="https://api.example.com/health">
+          <span class="form-hint">Must start with http:// or https://</span>
+        </div>
+
+        <div class="form-group">
+          <label for="inputName">Friendly Label</label>
+          <input type="text" id="inputName" name="name" placeholder="e.g. Billing Service API">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="selectMethod">HTTP Method</label>
+            <select id="selectMethod" name="method">
+              <option value="GET" selected>GET</option>
+              <option value="HEAD">HEAD</option>
+              <option value="POST">POST</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="inputExpectedStatus">Expected Status Code</label>
+            <input type="number" id="inputExpectedStatus" name="expectedStatus" placeholder="200" min="100" max="599">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="inputMaxLatency">Degraded Latency Ceiling (ms)</label>
+            <input type="number" id="inputMaxLatency" name="maxLatencyMs" placeholder="Optional (e.g. 500)" min="1">
+            <span class="form-hint">Flags as DEGRADED if slower</span>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="inputTimeout">Timeout Limit (ms)</label>
+            <input type="number" id="inputTimeout" name="timeoutMs" placeholder="5000" min="100">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputInterval">Polling Interval (ms)</label>
+          <input type="number" id="inputInterval" name="intervalMs" placeholder="30000" min="1000">
+          <span class="form-hint">Interval between automatic checks (min 1000ms)</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAdd">Add & Start Monitoring</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>
+        Demo application showcasing <a href="https://www.npmjs.com/package/endpoint-health-checker" target="_blank" rel="noopener"><strong>endpoint-health-checker</strong></a>
+        &bull; <a href="https://github.com/treeshax/endpoint-health-checker" target="_blank" rel="noopener">View Package on GitHub</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
